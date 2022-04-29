@@ -60,7 +60,7 @@ async fn handler(
 
             Ok(JsonRpcResponse::success(answer_id, result))
         }
-        method => Ok(value.method_not_found(method)),
+        method => Err(value.method_not_found(method)),
     }
 }
 
