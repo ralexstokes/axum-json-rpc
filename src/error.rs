@@ -86,19 +86,6 @@ impl std::fmt::Display for JsonRpcError {
     }
 }
 
-#[cfg(feature = "anyhow_error")]
-impl From<anyhow::Error> for JsonRpcError {
-    fn from(error: anyhow::Error) -> Self {
-        let message = error.to_string();
-        let data = serde_json::Value::Null;
-        Self {
-            code: INTERNAL_ERROR,
-            message,
-            data,
-        }
-    }
-}
-
 impl JsonRpcError {
     pub fn error_reason(&self) -> JsonRpcErrorReason {
         JsonRpcErrorReason::new(self.code)

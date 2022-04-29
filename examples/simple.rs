@@ -1,9 +1,8 @@
 use axum::extract::ContentLengthLimit;
 use axum::routing::post;
 use axum::Router;
-use axum_jrpc::{JrpcResult, JsonRpcExtractor, JsonRpcRepsonse};
-
-use axum_jrpc::error::{JsonRpcError, JsonRpcErrorReason};
+use axum_json_rpc::error::{JsonRpcError, JsonRpcErrorReason};
+use axum_json_rpc::{JsonRpcExtractor, JsonRpcResponse, JsonRpcResult};
 use serde::Deserialize;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -26,33 +25,40 @@ async fn main() {
         .unwrap();
 }
 
+fn error_from_anyhow(error: anyhow::Error) -> JsonRpcError {
+    let code = JsonRpcErrorReason::InternalError;
+    let message = error.to_string();
+    let data = serde_json::Value::Null;
+    JsonRpcError::new(code, message, data)
+}
+
 async fn handler(
     ContentLengthLimit(value): ContentLengthLimit<JsonRpcExtractor, 1024>,
-) -> JrpcResult {
-    let answer_id = value.get_answer_id();
+) -> JsonRpcResult {
+    let answer_id = value.get_request_id();
     println!("{:?}", value);
     match value.method.as_str() {
         "add" => {
             let request: Test = value.parse_params()?;
             let result = request.a + request.b;
-            Ok(JsonRpcRepsonse::success(answer_id, result))
+            Ok(JsonRpcResponse::success(answer_id, result))
         }
         "sub" => {
             let result: [i32; 2] = value.parse_params()?;
             let result = match failing_sub(result[0], result[1]).await {
                 Ok(result) => result,
-                Err(e) => return Err(JsonRpcRepsonse::error(answer_id, e.into())),
+                Err(e) => return Err(JsonRpcResponse::error(answer_id, error_from_anyhow(e))),
             };
-            Ok(JsonRpcRepsonse::success(answer_id, result))
+            Ok(JsonRpcResponse::success(answer_id, result))
         }
         "div" => {
             let result: [i32; 2] = value.parse_params()?;
             let result = match failing_div(result[0], result[1]).await {
                 Ok(result) => result,
-                Err(e) => return Err(JsonRpcRepsonse::error(answer_id, e.into())),
+                Err(e) => return Err(JsonRpcResponse::error(answer_id, e.into())),
             };
 
-            Ok(JsonRpcRepsonse::success(answer_id, result))
+            Ok(JsonRpcResponse::success(answer_id, result))
         }
         method => Ok(value.method_not_found(method)),
     }
