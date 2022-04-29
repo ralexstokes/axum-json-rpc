@@ -24,9 +24,9 @@ struct JsonRpcRequest {
 /// Parses a JSON-RPC request, and returns the request ID, the method name, and the parameters.
 /// If the request is invalid, returns an error.
 /// ```rust
-/// use axum_jrpc::{JrpcResult, JsonRpcExtractor, JsonRpcResponse};
+/// use axum_jrpc::{JsonRpcResult, JsonRpcExtractor, JsonRpcResponse};
 ///
-/// fn router(req: JsonRpcExtractor) -> JrpcResult {
+/// fn router(req: JsonRpcExtractor) -> JsonRpcResult {
 ///   let req_id = req.get_request_id()?;
 ///   let method = req.method();
 ///   match method {
